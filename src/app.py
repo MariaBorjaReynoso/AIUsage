@@ -327,3 +327,147 @@ st.markdown(
     "across all numerical variables, highlighting which usage and rating metrics move together with `Productivity_Score` "
     "and checking for multicollinearity among predictors."
 )
+
+from scipy import stats
+
+# ---------------------------------------------------------
+# Stage 4: Statistical Analysis & Hypothesis Testing
+# ---------------------------------------------------------
+st.header("3. Statistical Analysis & Hypothesis Testing")
+st.markdown(
+    "All hypothesis tests are evaluated at significance level $\\alpha = 0.05$ on the cleaned dataset ($N = 288$ unique respondents). "
+    "Because this is observational survey data, statistically significant results indicate **associations** rather than causal effects."
+)
+
+# --- Test 1: Correlation Analysis (Pearson r & Spearman rho) ---
+st.subheader("3.1 Correlation Analysis: Daily AI Usage, Productivity & Satisfaction")
+st.markdown(
+    """
+    - **Variables Tested:** `AI_Usage_Hours_Per_Day` vs. `Productivity_Score`, and `AI_Usage_Hours_Per_Day` vs. `Satisfaction_Score`
+    - **Null Hypothesis ($H_0$):** There is no linear or monotonic association between daily AI usage hours and productivity or satisfaction ($r = 0, \\rho = 0$).
+    - **Alternative Hypothesis ($H_A$):** There is a statistically significant linear or monotonic association ($r \\ne 0, \\rho \\ne 0$).
+    - **Test Assumptions & Appropriateness:** Pearson's $r$ evaluates linear relationships on continuous interval variables, while Spearman's rank correlation ($\\rho$) evaluates monotonic relationships without requiring strict normality or sensitivity to outliers.
+    """
+)
+
+corr_pairs = [
+    ("AI_Usage_Hours_Per_Day", "Productivity_Score"),
+    ("AI_Usage_Hours_Per_Day", "Satisfaction_Score"),
+    ("Productivity_Score", "Satisfaction_Score"),
+]
+corr_results = []
+for x_col, y_col in corr_pairs:
+    r_stat, r_p = stats.pearsonr(df[x_col], df[y_col])
+    rho_stat, rho_p = stats.spearmanr(df[x_col], df[y_col])
+    corr_results.append(
+        {
+            "Variable Pair": f"{x_col} vs. {y_col}",
+            "Pearson r": round(r_stat, 4),
+            "Pearson p-value": f"{r_p:.4g}",
+            "Variance Explained (r²)": round(r_stat**2, 4),
+            "Spearman ρ": round(rho_stat, 4),
+            "Spearman p-value": f"{rho_p:.4g}",
+            "Decision (α = 0.05)": "Reject H₀" if (r_p < 0.05 or rho_p < 0.05) else "Fail to Reject H₀",
+        }
+    )
+
+corr_res_df = pd.DataFrame(corr_results)
+st.dataframe(corr_res_df, use_container_width=True)
+
+r_up, p_up = stats.pearsonr(df["AI_Usage_Hours_Per_Day"], df["Productivity_Score"])
+rho_up, prho_up = stats.spearmanr(df["AI_Usage_Hours_Per_Day"], df["Productivity_Score"])
+st.info(
+    f"**Contextual Interpretation:** Between `AI_Usage_Hours_Per_Day` and `Productivity_Score`, Pearson $r = {r_up:.3f}$ "
+    f"($p = {p_up:.4g}$, effect size $r^2 = {r_up**2:.3f}$) and Spearman $\\rho = {rho_up:.3f}$ ($p = {prho_up:.4g}$). "
+    f"{'This indicates a statistically significant association between daily AI usage hours and perceived productivity, though $r^2$ shows that usage hours alone explain only a modest share of variance.' if p_up < 0.05 else 'We fail to reject $H_0$, indicating that simply spending more hours per day using AI is not significantly associated with higher perceived productivity on its own.'}"
+)
+
+# --- Test 2: Independent Two-Sample t-Test (Students vs. Professionals) ---
+st.subheader("3.2 Independent Two-Sample t-Test: Weekly Time Saved by User Type")
+
+students_ts = df[df["User_Type"] == "Student"]["Time_Saved_Hours_Per_Week"]
+profs_ts = df[df["User_Type"] == "Professional"]["Time_Saved_Hours_Per_Week"]
+
+# Assumption checks: Shapiro-Wilk normality & Levene's homogeneity of variance
+shapiro_stu_p = stats.shapiro(students_ts)[1]
+shapiro_pro_p = stats.shapiro(profs_ts)[1]
+levene_stat, levene_p = stats.levene(students_ts, profs_ts)
+
+# Welch's two-sample t-test (robust when variances differ) & Cohen's d effect size
+t_stat, t_pval = stats.ttest_ind(students_ts, profs_ts, equal_var=(levene_p >= 0.05))
+pooled_sd = np.sqrt(
+    ((len(students_ts) - 1) * students_ts.var(ddof=1) + (len(profs_ts) - 1) * profs_ts.var(ddof=1))
+    / (len(students_ts) + len(profs_ts) - 2)
+)
+cohens_d = (students_ts.mean() - profs_ts.mean()) / pooled_sd
+
+st.markdown(
+    f"""
+    - **Variables Tested:** `User_Type` (Independent variable: Student [$n = {len(students_ts)}$] vs. Professional [$n = {len(profs_ts)}$]) and `Time_Saved_Hours_Per_Week` (Continuous dependent variable).
+    - **Null Hypothesis ($H_0$):** Mean weekly time saved is equal for Students and Professionals ($\\mu_{{\\text{{Student}}}} = \\mu_{{\\text{{Professional}}}}$).
+    - **Alternative Hypothesis ($H_A$):** Mean weekly time saved differs between Students and Professionals ($\\mu_{{\\text{{Student}}}} \\ne \\mu_{{\\text{{Professional}}}}$).
+    - **Test Assumptions & Appropriateness:** A two-sample $t$-test is appropriate for comparing continuous means across two independent groups. Group sample sizes exceed $n = 30$ (satisfying Central Limit Theorem robustness despite Shapiro-Wilk $p = {shapiro_stu_p:.3g}$ and $p = {shapiro_pro_p:.3g}$), and Levene's test ($F = {levene_stat:.3f}, p = {levene_p:.3g}$) informs equal-variance handling.
+    """
+)
+
+ttest_table = pd.DataFrame(
+    [
+        {
+            "Student Mean ± SD": f"{students_ts.mean():.2f} ± {students_ts.std():.2f}",
+            "Professional Mean ± SD": f"{profs_ts.mean():.2f} ± {profs_ts.std():.2f}",
+            "t-Statistic": round(t_stat, 4),
+            "p-Value": f"{t_pval:.4g}",
+            "Effect Size (Cohen's d)": round(cohens_d, 4),
+            "Decision (α = 0.05)": "Reject H₀" if t_pval < 0.05 else "Fail to Reject H₀",
+        }
+    ]
+)
+st.dataframe(ttest_table, use_container_width=True)
+
+st.info(
+    f"**Contextual Interpretation:** The two-sample $t$-test yields $t = {t_stat:.3f}$ ($p = {t_pval:.4g}$) with an effect size "
+    f"of Cohen's $d = {cohens_d:.3f}$. {'Because $p < 0.05$, we reject $H_0$: user role is significantly associated with weekly hours saved.' if t_pval < 0.05 else 'Because $p \\ge 0.05$, we fail to reject $H_0$: Students and Professionals report statistically similar weekly time savings from AI tools.'}"
+)
+
+# --- Test 3: One-Way ANOVA (Productivity_Score across AI_Purpose) ---
+st.subheader("3.3 One-Way ANOVA: Perceived Productivity Across Primary AI Purpose (`AI_Purpose`)")
+
+groups = [group["Productivity_Score"].values for _, group in df.groupby("AI_Purpose")]
+purpose_names = [name for name, _ in df.groupby("AI_Purpose")]
+levene_anova_stat, levene_anova_p = stats.levene(*groups)
+f_stat, anova_pval = stats.f_oneway(*groups)
+
+# Calculate Eta-Squared (eta^2 = SS_between / SS_total) effect size
+grand_mean = df["Productivity_Score"].mean()
+ss_between = sum(len(g) * (g.mean() - grand_mean) ** 2 for g in groups)
+ss_total = sum((df["Productivity_Score"] - grand_mean) ** 2)
+eta_squared = ss_between / ss_total
+
+st.markdown(
+    f"""
+    - **Variables Tested:** `AI_Purpose` (Categorical factor with {len(purpose_names)} categories: {', '.join(purpose_names)}) and `Productivity_Score` (Continuous dependent variable).
+    - **Null Hypothesis ($H_0$):** Mean perceived productivity score is equal across all primary AI task purposes ($\\mu_1 = \\mu_2 = \\dots = \\mu_{{{len(purpose_names)}}}$).
+    - **Alternative Hypothesis ($H_A$):** At least one `AI_Purpose` category has a significantly different mean perceived productivity score.
+    - **Test Assumptions & Appropriateness:** One-Way ANOVA is appropriate for comparing a continuous mean across three or more independent categorical groups without inflating Type I error. Observations are independent, and Levene's test ($F = {levene_anova_stat:.3f}, p = {levene_anova_p:.3g}$) checks homogeneity of variance across categories.
+    """
+)
+
+anova_table = pd.DataFrame(
+    [
+        {
+            "Factor Variable": "AI_Purpose",
+            "Number of Groups (k)": len(purpose_names),
+            "F-Statistic": round(f_stat, 4),
+            "p-Value": f"{anova_pval:.4g}",
+            "Effect Size (Eta-Squared η²)": round(eta_squared, 4),
+            "Decision (α = 0.05)": "Reject H₀" if anova_pval < 0.05 else "Fail to Reject H₀",
+        }
+    ]
+)
+st.dataframe(anova_table, use_container_width=True)
+
+st.info(
+    f"**Contextual Interpretation:** One-Way ANOVA across `AI_Purpose` produces $F = {f_stat:.3f}$ ($p = {anova_pval:.4g}$) "
+    f"with an effect size of $\\eta^2 = {eta_squared:.3f}$ (proportion of variance in productivity associated with task purpose). "
+    f"{'Since $p < 0.05$, we reject $H_0$, indicating that perceived productivity differs significantly depending on the primary task for which AI is used.' if anova_pval < 0.05 else 'Since $p \\ge 0.05$, we fail to reject $H_0$, indicating no statistically significant difference in average productivity scores across different primary AI purposes.'}"
+)
