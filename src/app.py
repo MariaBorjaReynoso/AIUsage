@@ -1,5 +1,6 @@
 import os
 import re
+import requests
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -659,9 +660,33 @@ if st.button("Generate AI Interpretation via LangChain", type="primary"):
                         "Project Metrics:\n{stats_context}\n\nQuestion: {question}"
                     ),
                 )
+
+                # Auto-discover valid generateContent models for this API key
+                candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]
+                try:
+                    resp = requests.get(
+                        f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_api_key}",
+                        timeout=10,
+                    )
+                    if resp.ok:
+                        discovered = [
+                            m["name"].replace("models/", "")
+                            for m in resp.json().get("models", [])
+                            if "generateContent" in m.get("supportedGenerationMethods", [])
+                            and "gemini" in m.get("name", "")
+                        ]
+                        if discovered:
+                            # Prefer flash models first
+                            flash_first = [m for m in discovered if "flash" in m] + [
+                                m for m in discovered if "flash" not in m
+                            ]
+                            candidate_models = flash_first
+                except Exception:
+                    pass
+
                 ai_response = None
                 last_error = None
-                for model_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                for model_name in candidate_models:
                     try:
                         llm = ChatGoogleGenerativeAI(
                             model=model_name,
@@ -676,7 +701,7 @@ if st.button("Generate AI Interpretation via LangChain", type="primary"):
                         last_error = model_exc
 
                 if ai_response:
-                    st.success("LangChain + Gemini Response:")
+                    st.success(f"LangChain + Gemini Response (Model: `{model_name}`):")
                     st.write(ai_response)
                 else:
                     st.error(f"API call failed: {last_error}")
