@@ -659,19 +659,30 @@ if st.button("Generate AI Interpretation via LangChain", type="primary"):
                         "Project Metrics:\n{stats_context}\n\nQuestion: {question}"
                     ),
                 )
-                llm = ChatGoogleGenerativeAI(
-                 model="gemini-3.8-flash-lite",
-                 google_api_key=gemini_api_key,
-                 temperature=0,
-                 max_retries=1,
-             )
-                chain = prompt_template | llm | StrOutputParser()
-                ai_response = chain.invoke({"stats_context": context_summary, "question": user_ai_query})
-                st.success("LangChain + Gemini Response:")
-                st.write(ai_response)
+                ai_response = None
+                last_error = None
+                for model_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                    try:
+                        llm = ChatGoogleGenerativeAI(
+                            model=model_name,
+                            google_api_key=gemini_api_key,
+                            temperature=0,
+                            max_retries=1,
+                        )
+                        chain = prompt_template | llm | StrOutputParser()
+                        ai_response = chain.invoke({"stats_context": context_summary, "question": user_ai_query})
+                        break
+                    except Exception as model_exc:
+                        last_error = model_exc
+
+                if ai_response:
+                    st.success("LangChain + Gemini Response:")
+                    st.write(ai_response)
+                else:
+                    st.error(f"API call failed: {last_error}")
             except Exception as exc:
                 st.error(f"API call failed: {exc}")
-
+                
 st.subheader("5.2 Documented AI-Assisted Decisions & Critical Evaluation")
 st.markdown(
     "Per the project rubric, below are three representative interactions conducted via the integrated LangChain workflow, "
