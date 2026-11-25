@@ -660,9 +660,10 @@ if st.button("Generate AI Interpretation via LangChain", type="primary"):
                     ),
                 )
                 llm = ChatGoogleGenerativeAI(
-                    model="gemini-3.8-flash",
-                    google_api_key=gemini_api_key,
-                    temperature=0,
+                 model="gemini-3.8-flash-lite",
+                 google_api_key=gemini_api_key,
+                 temperature=0,
+                 max_retries=1,
                 )
                 chain = prompt_template | llm | StrOutputParser()
                 ai_response = chain.invoke({"stats_context": context_summary, "question": user_ai_query})
