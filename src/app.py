@@ -664,7 +664,7 @@ if st.button("Generate AI Interpretation via LangChain", type="primary"):
                  google_api_key=gemini_api_key,
                  temperature=0,
                  max_retries=1,
-                )
+             )
                 chain = prompt_template | llm | StrOutputParser()
                 ai_response = chain.invoke({"stats_context": context_summary, "question": user_ai_query})
                 st.success("LangChain + Gemini Response:")
