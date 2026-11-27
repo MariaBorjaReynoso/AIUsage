@@ -30,7 +30,7 @@ st.markdown(
     **Course:** Fall 2026 CSC 405 Data Science | **Author:** Maria Reynoso  
     **Research Question:** How are daily AI usage hours (`AI_Usage_Hours_Per_Day`), primary task purpose (`AI_Purpose`), 
     and user role (`User_Type`) associated with and predictive of perceived productivity (`Productivity_Score`)?  
-    *Note: Because these data come from an observational survey ($N = 300$ raw responses; $N = 288$ unique respondents after removing duplicates), all findings reflect statistical associations and predictive patterns rather than causal effects.*
+    **Note**: Because these data come from an observational survey ($N = 300$ raw responses; $N = 288$ unique respondents after removing duplicates), all findings reflect statistical associations and predictive patterns rather than causal effects.*
     """
 )
 
