@@ -63,8 +63,8 @@ pdf.body_text(
 
 figure_files = [
     ("figures/fig1_distributions.png", "Figure 1: Distributions of daily AI usage hours and perceived productivity scores (N = 288)."),
-    ("figures/fig2_user_type_boxplots.png", "Figure 2: Comparison of weekly time saved and productivity scores by user role (Student vs. Professional)."),
-    ("figures/fig3_usage_purpose_relationships.png", "Figure 3: Daily AI usage vs. productivity trend and mean productivity across primary task categories."),
+    ("figures/fig2_boxplots_user_type.png", "Figure 2: Comparison of weekly time saved and productivity scores by user role (Student vs. Professional)."),
+    ("figures/fig3_scatter_and_purpose.png", "Figure 3: Daily AI usage vs. productivity trend and mean productivity across primary task categories."),
     ("figures/fig4_correlation_heatmap.png", "Figure 4: Pairwise Pearson correlation heatmap across numerical survey variables.")
 ]
 
@@ -123,14 +123,16 @@ pdf.body_text(
     "3. Model Regularization: Constrained Random Forest depth (max_depth=5) and validated with 5-fold CV to prevent overfitting on a 288-row dataset."
 )
 
-# Section 6
+# Section 6 
 pdf.section_title("6. Conclusions and Study Limitations")
 pdf.body_text(
     "- Summary of Findings: Daily AI usage hours correlate positively with perceived productivity (r = 0.636), whereas productivity scores do not differ significantly across primary task purposes, and weekly time savings are comparable between students and professionals.\n"
     "- Practical Takeaways: Schools and workplaces should pair AI tool access with structured workflow guidance rather than focusing solely on tool or task selection.\n"
-    "- Limitations: Productivity scores, accuracy ratings, and weekly hours saved are self-reported survey estimates rather than logged metrics, and observational data reflect statistical associations rather than causal effects."
+    "- Limitations: Productivity scores, accuracy ratings, and weekly hours saved are self-reported survey estimates rather than logged metrics, and observational data reflect statistical associations rather than causal effects.\n"
+    "- GitHub Code Repository: https://github.com/MariaBorjaReynoso/AIUsage"
 )
 
+# Save PDF 
 os.makedirs("report", exist_ok=True)
 out_path = "report/Final_Project_Report.pdf"
 pdf.output(out_path)
