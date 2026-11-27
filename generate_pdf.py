@@ -128,7 +128,7 @@ pdf.body_text(
     "3. Model Regularization: Constrained Random Forest depth (max_depth=5) and validated with 5-fold CV to prevent overfitting on a 288-row dataset."
 )
 
-# Section 6 (Includes GitHub Repository Link at the End)
+# Section 6
 pdf.section_title("6. Conclusions and Study Limitations")
 pdf.body_text(
     "- Summary of Findings: Daily AI usage hours correlate positively with perceived productivity (r = 0.636), whereas productivity scores do not differ significantly across primary task purposes, and weekly time savings are comparable between students and professionals.\n"
@@ -137,7 +137,6 @@ pdf.body_text(
     "- GitHub Code Repository: https://github.com/MariaBorjaReynoso/AIUsage"
 )
 
-# Save directly to Desktop (outside OneDrive) first, then copy to report/
 desktop_path = r"C:\Users\Maria Reynoso\Desktop\Final_Project_Report.pdf"
 os.makedirs("report", exist_ok=True)
 repo_report_path = "report/Final_Project_Report.pdf"
