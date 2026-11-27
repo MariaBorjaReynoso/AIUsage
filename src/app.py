@@ -739,3 +739,6 @@ st.markdown(
   observational, the results represent statistical associations and predictive patterns rather than causal effects.
     """
 )
+st.markdown(
+    "- **GitHub Code Repository:** [https://github.com/MariaBorjaReynoso/AIUsage](https://github.com/MariaBorjaReynoso/AIUsage)"
+)
